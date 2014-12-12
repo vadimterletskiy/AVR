@@ -1,4 +1,4 @@
 AVR
 ===
 
-my avr projects
+my avr projects.
