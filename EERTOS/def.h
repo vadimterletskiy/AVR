@@ -29,5 +29,19 @@
 #define Prescaler	  		64
 #define	TimerDivider  		(F_CPU/Prescaler/1000)		// 1 mS
 
+//PORT Defines
+#define ADC_U_CHARGE 2
+#define ADC_I_CHARGE 0
+#define ADC_I_DISCHARGE 6 //todo
+#define ADC_RESISTOR		2 //usbadc slow jumper
+
+//#define LED_PORT PORTC
+//#define LED_DDR  DDRC
+//#define LED_RED  0
+
+/*#define	LED3		7*/
+
+#define VD_BLINK InvBit(LED_PORT,LED_RED);_delay_ms(50);InvBit(LED_PORT,LED_RED)
+
 
 #endif /* DEF_H_ */

@@ -5,14 +5,16 @@
  * Author : vaterlet
  */ 
 
+
 #include "defines.h"
 
 int main(void)
 {
 	InitRTOS();
 	RunRTOS();
+	initAll();
 	wdt_enable(WDTO_120MS);
-	SetTask(TaskLedOn);
+	RunTasks();
     while (1) 
     {
       wdt_reset();	// —брос собачьего таймера
