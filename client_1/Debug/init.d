@@ -1,4 +1,4 @@
-tasks.d tasks.o: .././tasks.c .././tasks.h .././defines.h \
+init.d init.o: .././init.c .././defines.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\io.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\sfr_defs.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\inttypes.h \
@@ -12,9 +12,7 @@ tasks.d tasks.o: .././tasks.c .././tasks.h .././defines.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\lock.h \
  .././EERTOS.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\wdt.h \
- .././init.h .././UART/uart.h
-
-.././tasks.h:
+ .././tasks.h .././init.h .././UART/uart.h
 
 .././defines.h:
 
@@ -43,6 +41,8 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 .././EERTOS.h:
 
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\wdt.h:
+
+.././tasks.h:
 
 .././init.h:
 

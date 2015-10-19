@@ -6,4 +6,6 @@
  *  Author: vaterlet
  */ 
 
+#include "defines.h"
+
 void TaskLedOn (void);
