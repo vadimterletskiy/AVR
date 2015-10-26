@@ -16,6 +16,7 @@ void TaskADC_12V (void);
 void TaskPWM (void);
 void TaskADCButton (void);
 void TaskMaxPWM (void);
+void TaskAlarmByBattery (void);
 
 void TaskTurnOnPhone (void);
 void TaskParseUart (void);
@@ -34,6 +35,7 @@ volatile short action1 = 0;//1 - alarm
 volatile short error1 = ER_OK;//1 - alarm
 volatile short binar = 0;//1 - binar
 volatile short prevPWM = 0;
+volatile uint8_t batteryAlarm = 0;
 
 
 //============================================================================
@@ -146,6 +148,22 @@ void TaskADC3 (void)
 #define checkAlarm 1000
 #define timeToCall 30000
 
+void TaskAlarmByBattery (void)
+{
+	if (adc_v[ADC_PIN_12V] < CONST_U(9500))
+	{
+		switch(++batteryAlarm)
+		{
+			case 5:
+				
+		}
+	} else 
+	{
+		batteryAlarm = 0;
+	}
+	SetTimerTask(TaskAlarmByBattery, 250);	
+	//batteryAlarm++
+}
 void TaskAlarm (void)
 {
 	if (ALARM_IN_GUARD)//fprintf(stdout, "Alarm is On");
@@ -172,6 +190,7 @@ void TaskAlarm (void)
 	{
 		error1 = ER_OK;
 		SetBit(action1,AT_PING);
+		SetBit(action1,IN_GUARD);
 		/*if (PM_PinIsSet(ALARM_STATUS))
 		{
 			fprintf(stdout, "STATUS is High\t");
@@ -189,7 +208,7 @@ void TaskAlarm (void)
 			fprintf(stdout, "PAGER  is low\n");
 		}*/	
 	}
-	SetTimerTask(TaskAlarm, checkAlarm);
+	SetTask(TaskAlarmByBattery);
 }
 
 void TaskTurnOnPhone(void)
@@ -213,7 +232,7 @@ void TaskTurnOnPhone(void)
 			}				
 		break;
 		case 16:
-			POWER_PUSH_DOWN;			
+			POWER_PUSH_DOWN;				
 		break;
 		case 18:
 			POWER_PUSH_UP;
@@ -321,9 +340,11 @@ int main(void)
 	SetTimerTask(TaskTurnOnPhone, 1000);
 	SetTimerTask(TaskSideLights,25);
 	SetTimerTask(TaskADCButton, 50);
+	SetTimerTask(TaskAlarmByBattery, 250);
 	//SetTimerTask(TaskBinarOn, 5000);
 	//fprintf(stdout,"### START ###\r\n");
 	fprintf(stdout,"ATE0\r\n");	
+	
 	
 	wdt_enable(WDTO_1S);
     while(1) 		// Главный цикл диспетчера
