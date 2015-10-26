@@ -8,6 +8,7 @@
 #include "UART/uart.h"
 #include "init.h"
 
+<<<<<<< HEAD
 volatile int16_t LightsCount = 0;
 
 void initAll(){
@@ -35,5 +36,9 @@ void initAll(){
 	TCCR1A = (1<<WGM11) | (1<<COM1A1) | (1<<COM1B1) | (1<<COM1A1) | (1<<COM1B1);;
 	TCCR1B = (1<<WGM13) | (1<<WGM12) | (1<<CS10);// CLK/8
 	
+=======
+void initAll(){
+	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+>>>>>>> 51ade5dbc4972b61d92b53420a53a74ae90e0bd0
 	return;
 }
