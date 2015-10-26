@@ -41,7 +41,6 @@ enum actions{
 	AT_PING = 1<<1,
 	AT_CALL = 1<<2,
 	AT_PHONE_IS_ON = 1<<3,
-	IN_GUARD = 1<<4
 };
 enum error{
 	ER_OK = 1,

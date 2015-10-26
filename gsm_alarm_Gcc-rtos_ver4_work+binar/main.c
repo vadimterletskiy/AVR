@@ -150,19 +150,19 @@ void TaskADC3 (void)
 
 void TaskAlarmByBattery (void)
 {
-	if (adc_v[ADC_PIN_12V] < CONST_U(9500))
+	/*if (ALARM_IN_GUARD && batteryAlarm == 1)
 	{
-		switch(++batteryAlarm)
-		{
-			case 5:
-				
-		}
-	} else 
+		batteryAlarm = 1;
+	} else if (batteryAlarm < 55){
+		++batteryAlarm;
+		
+	} else
 	{
-		batteryAlarm = 0;
+		batteryAlarm = 1;			//call
+		SetTimerTask(TaskAlarmByBattery, 60000); //call again after 1 min
+		return;				
 	}
-	SetTimerTask(TaskAlarmByBattery, 250);	
-	//batteryAlarm++
+	SetTimerTask(TaskAlarmByBattery, 250);*/
 }
 void TaskAlarm (void)
 {
@@ -190,7 +190,6 @@ void TaskAlarm (void)
 	{
 		error1 = ER_OK;
 		SetBit(action1,AT_PING);
-		SetBit(action1,IN_GUARD);
 		/*if (PM_PinIsSet(ALARM_STATUS))
 		{
 			fprintf(stdout, "STATUS is High\t");
@@ -306,9 +305,9 @@ void TaskBinarOn (void) {
 void uartHendler(unsigned char c)
 {
 	if (c == '\n' || c == '\r')
-	{	
+	{
 		SetTimerTask(TaskParseUart, 100);
-	}	
+	}
 }
 
 void initFromEE(){
