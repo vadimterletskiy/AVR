@@ -1,0 +1,88 @@
+Index: server/menu.c
+===================================================================
+RCS file: /cvsroot/lcdproc/lcdproc/server/menu.c,v
+retrieving revision 1.42
+diff -u -r1.42 menu.c
+--- server/menu.c	22 Feb 2012 22:25:32 -0000	1.42
++++ server/menu.c	1 Mar 2012 09:06:07 -0000
+@@ -41,6 +41,7 @@
+ 
+ 
+ extern Menu *custom_main_menu;
++extern bool add_back_action;
+ 
+ 
+ /**
+@@ -208,6 +209,12 @@
+ 	if (new_menu != NULL) {
+ 		new_menu->data.menu.contents = LL_new();
+ 		new_menu->data.menu.association = NULL;
++
++		if (add_back_action) {
++			MenuItem *back;
++			back = menuitem_create_action("back2", NULL, "back", NULL, MENURESULT_CLOSE);
++			menu_add_item(new_menu, back);
++		}
+ 	}
+ 
+ 	return new_menu;
+@@ -244,8 +251,15 @@
+ 	if ((menu == NULL) || (item == NULL))
+ 		return;
+ 
+-	/* Add the item to the menu */
+-	LL_Push(menu->data.menu.contents, item);
++	if (add_back_action) {
++		/* Add the item before the 'back' entry which is the last */
++		menu_find_item(menu, "back2", false);
++		LL_InsertNode(menu->data.menu.contents, item);
++	}
++	else {
++		/* Add the item to the end of the menu */
++		LL_Push(menu->data.menu.contents, item);
++	}
+ 	item->parent = menu;
+ }
+ 
+Index: server/menuscreens.c
+===================================================================
+RCS file: /cvsroot/lcdproc/lcdproc/server/menuscreens.c,v
+retrieving revision 1.33
+diff -u -r1.33 menuscreens.c
+--- server/menuscreens.c	22 Feb 2012 22:25:32 -0000	1.33
++++ server/menuscreens.c	1 Mar 2012 09:06:07 -0000
+@@ -50,6 +50,7 @@
+ char *left_key;
+ char *right_key;
+ static unsigned int keymask;	/* mask of defined menu keys */
++bool add_back_action = false;
+ 
+ Screen *menuscreen = NULL;
+ MenuItem *active_menuitem = NULL;
+@@ -148,6 +149,9 @@
+ 
+ 	screenlist_add(menuscreen);
+ 
++	if (is_menu_key(enter_key))
++		add_back_action = true;
++
+ 	/* Build menu */
+ 	menuscreen_create_menu();
+ 
+@@ -421,12 +425,12 @@
+ 
+ 	debug(RPT_DEBUG, "%s(\"%s\")", __FUNCTION__, key);
+ 
+-	if ((menu_key != NULL) && (strcmp(key, menu_key) == 0)) {
+-		token = MENUTOKEN_MENU;
+-	}
+-	else if ((enter_key != NULL) && (strcmp(key, enter_key) == 0)) {
++	if ((enter_key != NULL) && (strcmp(key, enter_key) == 0)) {
+ 		token = MENUTOKEN_ENTER;
+ 	}
++	else if ((menu_key != NULL) && (strcmp(key, menu_key) == 0)) {
++		token = MENUTOKEN_MENU;
++	}
+ 	else if ((up_key != NULL) && (strcmp(key, up_key) == 0)) {
+ 		token = MENUTOKEN_UP;
+ 	}

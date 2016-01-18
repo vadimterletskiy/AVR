@@ -1,0 +1,16 @@
+Index: server/drivers/hd44780-serial.h
+===================================================================
+RCS file: /cvsroot/lcdproc/lcdproc/server/drivers/hd44780-serial.h,v
+retrieving revision 1.15
+diff -u -r1.15 hd44780-serial.h
+--- server/drivers/hd44780-serial.h	25 Apr 2012 06:34:37 -0000	1.15
++++ server/drivers/hd44780-serial.h	1 Jun 2012 05:59:27 -0000
+@@ -68,7 +68,7 @@
+ 	/*    type                  instr data     v     ^ bitrate bits  K   esc  B  Besc  Boff   Bon Multi  End */
+ 	{ HD44780_CT_PICANLCD,      0x11, 0x12, 0x00, 0x20,   9600,   8, 0, 0x00, 0,    0,    0,    0,   0,    0 },
+ 	{ HD44780_CT_LCDSERIALIZER, 0xFE,    0, 0x00, 0x00,   9600,   8, 0, 0x00, 0,    0,    0,    0,   0,    0 },
+-	{ HD44780_CT_LOS_PANEL,     0xFE,    0, 0x00, 0x00,   9600,   4, 1, 0xFE, 1, 0xFD,    0, 0xFF,   0,    0 },
++	{ HD44780_CT_LOS_PANEL,     0xFE, 0xFC, 0xFC, 0xFF,   9600,   8, 1, 0xFE, 0,    0,    0,    0,   0,    0 },
+ 	{ HD44780_CT_VDR_LCD,       0xFE,    0, 0x00, 0x00,   9600,   4, 0, 0x00, 0,    0,    0,    0,   0,    0 },
+ 	{ HD44780_CT_VDR_WAKEUP,    0xC0, 0xC4, 0xC0, 0xD0,   9600,   4, 0, 0x00, 1,    0, 0xC9, 0xC8,   1, 0xCF },
+ 	{ HD44780_CT_PERTELIAN,     0xFE,    0, 0x00, 0x00,   9600,   8, 0, 0x00, 1, 0xFE, 0x02, 0x03,   0,    0 },
