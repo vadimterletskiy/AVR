@@ -1,8 +1,8 @@
 #include "HAL.h"
 #include "EERTOS.h"
 #include <string.h>
-unsigned int EEMEM  eeprom_array[5];
-unsigned int my_eeprom_array[5];
+unsigned int EEMEM  eeprom_array[3];
+unsigned int my_eeprom_array[3];
 
 // RTOS Interrupt
 ISR(RTOS_ISR) { TimerService();}
@@ -10,13 +10,15 @@ ISR(RTOS_ISR) { TimerService();}
 void TaskLedOn (void);
 void TaskLedOff (void);
 void TaskLedBlink (void);
-void TaskUART (void);
+void TaskLcdBlink (void);
+//void TaskUART (void);
 void TaskADC3 (void);
 void TaskADC_12V (void);
 void TaskPWM (void);
 void TaskADCButton (void);
 void TaskMaxPWM (void);
 void TaskAlarmByBattery (void);
+void TaskLcd(void);
 
 void TaskTurnOnPhone (void);
 void TaskParseUart (void);
@@ -37,31 +39,82 @@ volatile short binar = 0;//1 - binar
 volatile short prevPWM = 0;
 volatile uint8_t batteryAlarm = 0;
 
+volatile uint32_t time_running = 0;
+volatile uint32_t time_no_answer = 0;
 
 //============================================================================
 // Область задач
 //============================================================================
+#define SEC_TO_DAY(sec) sec/2/60/60/24
+#define SEC_TO_HOUR(sec) sec/2/60/60%24
+#define SEC_TO_MIN(sec) sec/2/260%60
+
+void TaskLcd(void)
+{
+	SetTimerTask(TaskLcd, 500);
+	time_running++;
+	i2c_lcd_home();
+	char t = ':';
+	if (time_running%2 == 1){
+		t = ' ';
+	}
+	fprintf_P(stderr, PSTR("%02ld%c%02ld%c%02ld    %03d "),
+	SEC_TO_DAY(time_running),
+	t,
+	SEC_TO_HOUR(time_running),
+	t,
+	SEC_TO_MIN(time_running),
+	//GetTimeToOff());
+	adc_v[ADC_PIN_RED]);	
+	
+	i2c_lcd_gotoxy(0,1);
+	fprintf_P(stderr, PSTR("%2ld.%02ldV  %+2ld,%02dA  "), 
+		ADC_TO_VOLT2(adc_v[7], adc_v[ADC_PIN_12V])/1000, 
+		ADC_TO_VOLT2(adc_v[7], adc_v[ADC_PIN_12V])%100, 
+		ADC_TO_VOLT_I(adc_v[7], adc_v[ADC_PIN_RED])/1000,
+		abs(ADC_TO_VOLT_I(adc_v[7], adc_v[ADC_PIN_RED])%100));
+	if (ADC_TO_VOLT_I(adc_v[7], adc_v[ADC_PIN_RED]) < 0 &&
+	ADC_TO_VOLT_I(adc_v[7], adc_v[ADC_PIN_RED]) == 0)
+	{
+		i2c_lcd_gotoxy(9,1);
+		i2c_lcd_putch('-');		
+	}
+}
+
+void TaskLcdBlink(void)
+{
+	static uint_least8_t status = 0;
+	if (status == 0)
+	{
+		i2c_lcd_backlight_toggle();
+		SetTimerTask(TaskLcdBlink, 200);
+		status++;
+	}	
+}
+
 void TaskLedBlink (void)
 {
-	PM_OnPin(LED_RED);//зажигаем светодиод //LED_PORT  ^=1<<LED1;
-	SetTimerTask(TaskLedOff,200);	
+	PM_OnPin(LED_NEW);
+	SetTimerTask(TaskLedOff,200);		
 }
 void TaskLedOn (void)
 {	
-	PM_OnPin(LED_RED);//зажигаем светодиод //LED_PORT  ^=1<<LED1;
+	PM_OnPin(LED_NEW);
 }		  
 void TaskLedOff (void)
 {
-	PM_OffPin(LED_RED);	//гасим светодиод //LED_PORT  &= ~(1<<LED1);
+	PM_OffPin(LED_NEW);
 }
-
-void TaskUART (void)
+volatile char c = 'a';
+/*void TaskUART (void)
 {
-	fprintf(stdout, "pwm:%d\t 12v:%d\tOCR:%d\r\n", adc_v[ADC_PIN_RES_PWM], adc_v[ADC_PIN_12V],OCR1B);
+	fprintf(stderr, "%c.", c++);
+	//fprintf(stdout, "pwm:%d\t 12v:%d\tOCR:%d\r\n", adc_v[ADC_PIN_RES_PWM], adc_v[ADC_PIN_12V],OCR1B);
     //fprintf(stdout, "U_1200mV:%d, U_1320mV:%d, U_1200mV:%d\t%d0\n", CONST_U_1200mV, CONST_U_1280mV, adc_v[ADC_PIN_12V], 50*adc_v[ADC_PIN_12V]/1023*3);
 	//fprintf(stdout, "countOn: %d\t countOff:%d\n", countOn/4, countOff/4);
 	SetTimerTask(TaskUART,1000);
-}
+	//SetTask(TaskLedBlink);
+}*/
 void TaskMaxPWM (void)
 {	
 	if (OCR1A++ <= ICR_MAX){
@@ -142,6 +195,8 @@ void TaskADC3 (void)
 {
 	adc_v[ADC_PIN_RES_PWM] = adc_read(ADC_PRESCALER_64, ADC_VREF_AVCC, ADC_PIN_RES_PWM);
 	adc_v[ADC_PIN_12V] = adc_read(ADC_PRESCALER_64, ADC_VREF_AVCC, ADC_PIN_12V);
+	adc_v[ADC_PIN_RED] = adc_read(ADC_PRESCALER_64, ADC_VREF_AVCC, ADC_PIN_RED);
+	adc_v[7] = adc_read(ADC_PRESCALER_64, ADC_VREF_AVCC, 0x0E);
 	SetTimerTask(TaskADC3,50);
 }
 
@@ -166,14 +221,16 @@ void TaskAlarmByBattery (void)
 }
 void TaskAlarm (void)
 {
+	SetTimerTask(TaskAlarm, 1000);
 	if (ALARM_IN_GUARD)//fprintf(stdout, "Alarm is On");
-	{		
+	{
+		i2c_lcd_backlight_off();
 		error1 = ER_OK;
 		SetBit(action1,AT_PING);
-		//SetTask(TaskLedBlink);
+		SetTask(TaskLedBlink);
 		
 	} else if (ALARM_IN_CALLING)//fprintf(stdout, "Alarm is CALLING");
-	{		
+	{	
 		if (BitIsClear(action1, AT_CALL))
 		{
 			SetBit(action1, AT_CALL);
@@ -182,14 +239,21 @@ void TaskAlarm (void)
 				ClearBit(action1, AT_PING);
 				error1 = ER_OK;
 				fprintf_P(stdout, PSTR("ATDP+79082375997;\r\n"));
+				//i2c_lcd_gotoxy(1, 4);
+				//fprintf_P(stderr, PSTR("Call"));
 				callTime = 0;
 			}
 		}
 		//fprintf(stdout, "STATUS is High\t");
 	} else 
 	{
+		i2c_lcd_backlight_on();
 		error1 = ER_OK;
 		SetBit(action1,AT_PING);
+		if (time_no_answer > 10)
+		{
+			SetTimerTask(TaskLedBlink, 100);
+		}
 		/*if (PM_PinIsSet(ALARM_STATUS))
 		{
 			fprintf(stdout, "STATUS is High\t");
@@ -207,7 +271,7 @@ void TaskAlarm (void)
 			fprintf(stdout, "PAGER  is low\n");
 		}*/	
 	}
-	SetTask(TaskAlarmByBattery);
+	//SetTask(TaskAlarmByBattery);
 }
 
 void TaskTurnOnPhone(void)
@@ -228,7 +292,8 @@ void TaskTurnOnPhone(void)
 			if (BitIsSet(action1, AT_PING))
 			{	
 				fprintf_P(stdout, PSTR("ATE0\r\n"));
-			}				
+				time_no_answer++;
+			}			
 		break;
 		case 16:
 			POWER_PUSH_DOWN;				
@@ -247,40 +312,45 @@ void TaskTurnOnPhone(void)
 
 void TaskParseUart(void)
 {
-	SetBit(action1, AT_PHONE_IS_ON);
 	char str[64];	
-	//gets(str);
-	//fscanf(stdin,"%60s", str);
-	fscanf(stdin,"%s", str);
-	if (strstr(str, "RING"))
+	fscanf(stdin,"%50s", str);
+	//i2c_lcd_gotoxy(0, 0);
+	//fprintf(stderr, str);
+	SetBit(action1, AT_PHONE_IS_ON);	
+	
+	 if (strstr(str, "2375997") || strstr(str, "6088689"))
+	 {
+		 SetTask(TaskBinarOn);
+		 //i2c_lcd_gotoxy(1, 9);
+		 //fprintf_P(stderr, PSTR("ATA "));
+		 fprintf_P(stdout, PSTR("ATA\r\n"));
+		 unsigned int c = 0;
+		 do
+		 {
+			 c = uart_getc();
+		 } while (c != (UART_NO_DATA&c));
+	 } else	if (strstr(str, "RING"))
 	{
 		//SetTask(TaskLedBlink);
 		fprintf_P(stdout, PSTR("AT+CLCC\r\n"));
-	} else if (strstr(str, "2375997") || strstr(str, "6088689"))
-	{
-		SetTask(TaskBinarOn);
-		fprintf_P(stdout, PSTR("ATA\r\n"));
-		unsigned int c = 0;
-		do 
-		{
-			c = uart_getc();
-		} while (c != (UART_NO_DATA&c));
+		//i2c_lcd_gotoxy(1, 9);
+		//fprintf_P(stderr, PSTR("CLCC"));
 	} else if (strstr(str, "NO"))
 	{
 		ClearBit(action1, AT_CALL);
-		//fprintf_P(stdout, PSTR("_1"));		
 		error1 = ER_NO_DIALTONE;
 	} else if (strstr(str, "BUSY"))
 	{
 		ClearBit(action1, AT_CALL);
 		error1 = ER_BUSY;						
-		//fprintf_P(stdout, PSTR("_2"));
-	} else	if (strstr(str, "ERROR"))
+	} else if (strstr(str, "ERROR"))
 	{
-		//fprintf_P(stdout, PSTR("_3"));
 		ClearBit(action1, AT_CALL);
 		error1 = ER_ERROR;		
-	}	
+	} else if (strstr(str, "OK"))
+	{
+		time_no_answer = 0;
+	}
 }
 
 void TaskBinarOn (void) {
@@ -306,18 +376,19 @@ void uartHendler(unsigned char c)
 {
 	if (c == '\n' || c == '\r')
 	{
-		SetTimerTask(TaskParseUart, 100);
+		SetTimerTask(TaskParseUart, 750);
 	}
 }
 
 void initFromEE(){
 	my_eeprom_array[EE_OCR] = read_eeprom_word(&eeprom_array[EE_OCR]);
-	my_eeprom_array[EE_C_ON_OFF] = read_eeprom_word(&eeprom_array[EE_C_ON_OFF]) == PWM_OFF ? PWM_OFF : PWM_ON;
+	my_eeprom_array[EE_C_ON_OFF] = read_eeprom_word(&eeprom_array[EE_C_ON_OFF]) == PWM_ON ? PWM_ON : PWM_OFF;
 }
 //==============================================================================
 int main(void)
 {
 	SetBit(action1, AT_PING);
+	initFromEE();
     InitAll();			// Инициализируем периферию
 	
 	/*for (short i = 0 ; i < 10 ; i++)
@@ -330,19 +401,20 @@ int main(void)
 	
     InitRTOS();			// Инициализируем ядро
     RunRTOS();			// Старт ядра. 
-	initFromEE();
 
     // Запуск фоновых задач.
 	SetTimerTask(TaskADC3,10);
-	SetTimerTask(TaskAlarm,12000);
-	SetTimerTask(TaskPWM,25);
+	SetTimerTask(TaskAlarm,1000);
+	SetTimerTask(TaskPWM,5000);
 	SetTimerTask(TaskTurnOnPhone, 1000);
 	SetTimerTask(TaskSideLights,25);
 	SetTimerTask(TaskADCButton, 50);
-	SetTimerTask(TaskAlarmByBattery, 250);
+	//SetTimerTask(TaskAlarmByBattery, 250);
+	//SetTimerTask(TaskUART, 50);
+	SetTimerTask(TaskLcd, 50);
 	//SetTimerTask(TaskBinarOn, 5000);
 	//fprintf(stdout,"### START ###\r\n");
-	fprintf(stdout,"ATE0\r\n");	
+	fprintf(stdout,"START\r\n");	
 	
 	
 	wdt_enable(WDTO_1S);

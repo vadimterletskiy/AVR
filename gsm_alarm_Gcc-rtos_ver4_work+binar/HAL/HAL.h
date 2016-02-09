@@ -2,9 +2,10 @@
 #define HAL_H
 
 //Clock Config
-#define F_CPU 11059200L
+//#define F_CPU 11059200L project
 #define UART_BAUD_RATE 115200
 #define UART_BAUD UART_BAUD_RATE 
+#define LCD_SUPPORT
 
 #include <avr/io.h>
 #include <stdlib.h>
@@ -25,6 +26,12 @@
 #include "../UART/uart.h"
 #include "../adc/atmega-adc.h"
 //#include "adc/adc.h"
+
+
+#ifdef LCD_SUPPORT
+#include "../lcd/i2c_master.h"
+#include "../lcd/i2c_lcd.h"
+#endif
 
 extern void InitAll(void);
 extern void uartHendler(unsigned char c);
@@ -72,14 +79,22 @@ enum error{
 #define ICR_MAX F_CPU/1/20000  // ICR1(TOP) = fclk/N/f ; N-Делитель; f-Частота;  8000000/8/50 = 20000
 	
 //описываем выводы
-#define LED_RED C, 0, _LOW
-#define LED_GREAN C, 0, _LOW
+#define LED_NEW D, 3, _LOW
+
+//#define LED_RED C, 0, _LOW	//adc
+//#define LED_GREAN C, 0, _LOW	//adc
+
+#define ADC_PIN_RED 0
+#define ADC_RED C, ADC_PIN_RED, _HI
 
 #define ADC_PIN_12V 2
 #define ADC_12V C, ADC_PIN_12V, _HI
 
 #define ADC_PIN_RES_PWM 1
 #define ADC_RES_PWM C, ADC_PIN_RES_PWM, _HI
+//pwm
+//#define ADC_PIN_GREEN 1
+//#define ADC_GREEN C, ADC_PIN_GREEN, _HI
 
 #define UART_TXD D, 1, _HI
 #define UART_RXD D, 0, _HI
@@ -103,14 +118,25 @@ enum error{
 
 #define SIDE_LIGHTS B, 4, _HI //for test use LED_RED
 
-#define R1_DIV 2										
-#define R2_DIV 1
-#define U_OP 500
+//#define R1_DIV 200
+//#define R2_DIV 100
+//#define U_OP 500
 //#define CONST_U_1100mV 1024/U_OP*1100/(R1_DIV + R2_DIV)
 //#define CONST_U_1300mV 1024/U_OP*1300/(R1_DIV + R2_DIV)
 //#define CONST_U_1320mV 1024/U_OP*1320/(R1_DIV + R2_DIV)
 //#define CONST_U_1000mV 1024/U_OP*1000/(R1_DIV + R2_DIV)
-#define CONST_U(mV) 1024/U_OP*mV/(R1_DIV + R2_DIV)
+//#define CONST_U_mV_div10(mV) 1024/U_OP*mV/(R1_DIV + R2_DIV)
+
+//#define CONST_U_mV_div10(mV) 1024/U_OP*mV/(R1_DIV + R2_DIV)
+#define R1 200
+#define R2 100
+#define K_R (R1 + R2)/R2
+#define CONST_U_mV(mV, ADC_bg) (mV/100*ADC_bg)/(13*K_R)
+
+//#define DIV_100 10*(R1_DIV + R2_DIV)
+//#define ADC_TO_VOLT(adc)    ((int32_t)adc)*50*DIV_100/1024
+#define ADC_TO_VOLT2(ADCbg, ADCizm)		((int32_t)1300*ADCizm*K_R/ADCbg)
+#define ADC_TO_VOLT_I(ADCbg, ADCizm)		(2500*12 - (int32_t)1300*12*ADCizm/ADCbg)
 
 
 
@@ -129,9 +155,9 @@ enum error{
 #define TurnOnLight(status)  PM_OnPin(SIDE_LIGHTS); SetBit(status, IS_ON)
 #define TurnOffLight(status) PM_OffPin(SIDE_LIGHTS); ClearBit(status, IS_ON)
 
-#define TIME_STEP 100
-#define TIME_LIMIT_1S 1000/TIME_STEP
-#define TIME_ON_COUNTER	  1
-#define TIME_OFF_COUNTER -1
+//#define TIME_STEP 200
+//#define TIME_LIMIT_1S 1000/TIME_STEP
+//#define TIME_ON_COUNTER	  1
+//#define TIME_OFF_COUNTER -1
 
 #endif

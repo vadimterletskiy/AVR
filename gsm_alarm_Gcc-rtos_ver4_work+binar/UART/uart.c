@@ -78,7 +78,7 @@ LICENSE:
  #define UART0_CONTROL  UCSRB
  #define UART0_DATA     UDR 
  #define UART0_UDRIE    UDRIE
-#elif  defined(__AVR_ATmega8__) || defined(__AVR_ATmega16__) || defined(__AVR_ATmega32__) \
+#elif  defined(__AVR_ATmega8__) || defined(__AVR_ATmega8A__) || defined(__AVR_ATmega16__) || defined(__AVR_ATmega32__) \
   || defined(__AVR_ATmega323__)
   /* ATmega with one USART */
  #define ATMEGA_USART
@@ -87,7 +87,7 @@ LICENSE:
  #define UART0_STATUS   UCSRA
  #define UART0_CONTROL  UCSRB
  #define UART0_DATA     UDR
- #define UART0_UDRIE    UDRIE
+ #define UART0_UDRIE    UDRIE 
 #elif defined (__AVR_ATmega8515__) || defined(__AVR_ATmega8535__)
  #define ATMEGA_USART
  #define UART0_RECEIVE_INTERRUPT   USART_RX_vect

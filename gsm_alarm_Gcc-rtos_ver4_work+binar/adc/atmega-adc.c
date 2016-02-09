@@ -3,6 +3,14 @@
 void (*_adc_handler)(uint8_t pin, uint16_t);
 volatile uint8_t _adc_pin_qty;
 
+uint16_t adc_read_power(){
+	ADMUX = _BV(MUX1) | _BV(MUX2) | _BV(MUX3); // Vbg
+	ADCSRA =_BV(ADPS0) | _BV(ADPS1) | _BV(ADFR) | _BV(ADSC) | _BV(ADEN);
+	while(!(ADCSRA & _BV(ADIF)));
+	ADCSRA |= _BV(ADIF);
+	return (ADCL | (ADCH<<8));
+}
+
 uint16_t adc_read(uint8_t prescaler, uint8_t vref, uint8_t pin) 
 {
 	#ifdef MUX5

@@ -14,6 +14,6 @@
 
 void TaskSideLightsTurnOff (void);
 void TaskSideLightsTurnOn (void);
-
+int16_t GetTimeToOff();
 
 #endif /* TASKLAMP_H_ */
